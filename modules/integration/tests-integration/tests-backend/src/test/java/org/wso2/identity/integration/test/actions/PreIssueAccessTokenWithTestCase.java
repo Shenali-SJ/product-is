@@ -355,7 +355,8 @@ public class PreIssueAccessTokenWithTestCase extends ActionsBaseTestCase {
 
     public String requestAccessToken(String consumerKey, String consumerSecret) throws Exception {
         String tenantedTokenURI = getTenantQualifiedURL(OAuth2Constant.ACCESS_TOKEN_ENDPOINT, tenantInfo.getDomain());
-        oAuth2Service.requestAccessToken(consumerKey, consumerSecret, tenantedTokenURI, TEST_USER, ADMIN_WSO2, userPermissions);}
+        return oAuth2Service.requestAccessToken(consumerKey, consumerSecret, tenantedTokenURI, TEST_USER, ADMIN_WSO2, userPermissions);
+    }
 
     @DataProvider(name = "getNewCustomScope")
     public Object[][] getNewCustomScope() {
