@@ -39,10 +39,12 @@ import org.wso2.identity.integration.test.rest.api.server.api.resource.v1.model.
 import org.wso2.identity.integration.test.rest.api.server.application.management.v1.model.ApplicationListItem;
 import org.wso2.identity.integration.test.rest.api.server.application.management.v1.model.ApplicationListResponse;
 import org.wso2.identity.integration.test.rest.api.server.application.management.v1.model.ApplicationModel;
+import org.wso2.identity.integration.test.rest.api.server.application.management.v1.model.BusinessAPICreationModel;
 import org.wso2.identity.integration.test.rest.api.server.application.management.v1.model.ApplicationPatchModel;
 import org.wso2.identity.integration.test.rest.api.server.application.management.v1.model.ApplicationResponseModel;
 import org.wso2.identity.integration.test.rest.api.server.application.management.v1.model.ApplicationSharePOSTRequest;
 import org.wso2.identity.integration.test.rest.api.server.application.management.v1.model.AuthorizedAPICreationModel;
+import org.wso2.identity.integration.test.rest.api.server.application.management.v1.model.AuthorizedBusinessAPIResponse;
 import org.wso2.identity.integration.test.rest.api.server.application.management.v1.model.OpenIDConnectConfiguration;
 import org.wso2.identity.integration.test.rest.api.server.application.management.v1.model.SAML2ServiceProvider;
 import org.wso2.identity.integration.test.rest.api.server.roles.v2.model.RoleV2;
@@ -60,7 +62,6 @@ import static org.wso2.identity.integration.test.utils.CarbonUtils.isLegacyAuthz
 public class OAuth2RestClient extends RestBaseClient {
 
     private static final String API_SERVER_BASE_PATH = "api/server/v1";
-    private static final String SCIM_V2_PATH = "scim2/v2";
     private static final String APPLICATION_MANAGEMENT_PATH = "/applications";
     private static final String API_RESOURCE_MANAGEMENT_PATH = "/api-resources";
     private static final String INBOUND_PROTOCOLS_BASE_PATH = "/inbound-protocols";
@@ -483,6 +484,26 @@ public class OAuth2RestClient extends RestBaseClient {
             ObjectMapper jsonWriter = new ObjectMapper(new JsonFactory());
             APIResourceResponse apiResourceResponse = jsonWriter.readValue(responseBody, APIResourceResponse.class);
             return apiResourceResponse.getScopes();
+        }
+    }
+
+    /**
+     * Creates a business API
+     *
+     * @param businessAPICreationModel
+     * @return ID of the created business API resource
+     */
+    public String createBusinessAPIResource(BusinessAPICreationModel businessAPICreationModel) {
+        String jsonRequestBody = toJSONString(businessAPICreationModel);
+
+        AuthorizedBusinessAPIResponse authorizedBusinessAPIResponse;
+        try (CloseableHttpResponse response = getResponseOfHttpPost(apiResourceManagementApiBasePath, jsonRequestBody, getHeaders())) {
+            String responseBody = EntityUtils.toString(response.getEntity());
+            ObjectMapper jsonWriter = new ObjectMapper(new JsonFactory());
+            authorizedBusinessAPIResponse = jsonWriter.readValue(responseBody, AuthorizedBusinessAPIResponse.class);
+            return authorizedBusinessAPIResponse.getId();
+        } catch (Exception e) {
+            throw new RuntimeException("Error while creating business API " + businessAPICreationModel.getName());
         }
     }
 
