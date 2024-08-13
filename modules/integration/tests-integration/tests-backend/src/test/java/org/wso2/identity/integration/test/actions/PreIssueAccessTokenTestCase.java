@@ -51,7 +51,7 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.util.*;
 
-public class PreIssueAccessTokenWithTestCase extends ActionsBaseTestCase {
+public class PreIssueAccessTokenTestCase extends ActionsBaseTestCase {
     private class OAuth2ServiceHelper extends OAuth2ServiceAbstractIntegrationTest {
         public OAuth2ServiceHelper() throws Exception {
             super.init(TestUserMode.TENANT_USER);
