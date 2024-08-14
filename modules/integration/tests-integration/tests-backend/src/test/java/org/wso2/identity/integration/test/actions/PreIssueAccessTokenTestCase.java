@@ -374,10 +374,6 @@ public class PreIssueAccessTokenTestCase extends ActionsBaseTestCase {
         String scopeString = jwtClaims.getStringClaim(scope);
         String[] scopes = scopeString.split("\\s+");
 
-        for (String str : scopes) {
-            System.out.println("Buch 00" + str);
-        }
-
         Assert.assertTrue(ArrayUtils.contains(scopes, newScopeArray[0]));
     }
 
@@ -395,9 +391,6 @@ public class PreIssueAccessTokenTestCase extends ActionsBaseTestCase {
         String[] audValueArray = jwtClaims.getStringArrayClaim(audClaim);
 
         if (audValueArray != null) {
-            for (String str : audValueArray) {
-                System.out.println("Buch0: " + str);
-            }
             Assert.assertTrue(ArrayUtils.contains(audValueArray, newAud));
         } else {
             String audValueString = jwtClaims.getStringClaim(audClaim);
@@ -498,9 +491,7 @@ public class PreIssueAccessTokenTestCase extends ActionsBaseTestCase {
 
         String scopeString = jwtClaims.getStringClaim(scope);
         String[] scopes = scopeString.split("\\s+");;
-        for (String str : scopes) {
-            System.out.println("Buch Rp 1: " + str);
-        }
+
         Assert.assertTrue(ArrayUtils.contains(scopes, replacedScope));
         Assert.assertFalse(ArrayUtils.contains(scopes, oldScope));
     }
@@ -519,9 +510,6 @@ public class PreIssueAccessTokenTestCase extends ActionsBaseTestCase {
         String[] audValueArray = jwtClaims.getStringArrayClaim(audClaim);
 
         if (audValueArray != null) {
-            for (String str : audValueArray) {
-                System.out.println("Buch Rp 2: " + str);
-            }
             Assert.assertTrue(ArrayUtils.contains(audValueArray, replacedAud));
             Assert.assertFalse(ArrayUtils.contains(audValueArray, oldAud));
         } else {
@@ -562,9 +550,7 @@ public class PreIssueAccessTokenTestCase extends ActionsBaseTestCase {
 
         String scopeString = jwtClaims.getStringClaim(scope);
         String[] scopes = scopeString.split("\\s+");;
-        for (String str : scopes) {
-            System.out.println("Buch 3" + str);
-        }
+
         Assert.assertFalse(ArrayUtils.contains(scopes, removedScope));
     }
 
