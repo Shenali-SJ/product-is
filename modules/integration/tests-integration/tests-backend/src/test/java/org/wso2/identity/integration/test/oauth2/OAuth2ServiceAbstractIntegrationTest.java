@@ -828,6 +828,10 @@ public class OAuth2ServiceAbstractIntegrationTest extends ISIntegrationTest {
         return appDTO;
     }
 
+    public OAuthConsumerAppDTO getOAuthAppByName(String name) throws Exception {
+        return adminClient.getOAuthAppByName(name);
+    }
+
     /**
      * Create and return a basic consumer application with all OAuth2 grant types.
      *

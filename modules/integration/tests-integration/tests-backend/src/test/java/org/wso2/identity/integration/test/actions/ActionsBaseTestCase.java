@@ -28,7 +28,6 @@ import org.wso2.identity.integration.test.restclients.ActionsRestClient;
 public class ActionsBaseTestCase extends ISIntegrationTest {
     protected ActionsRestClient restClient;
     protected OauthAdminClient adminClient;
-    private static final String PRE_ISSUE_ACCESS_TOKEN_TYPE = "preIssueAccessToken";
 
     /**
      * Initialize.
@@ -44,16 +43,11 @@ public class ActionsBaseTestCase extends ISIntegrationTest {
         adminClient = new OauthAdminClient(backendURL, sessionCookie);
     }
 
-    public int createPreIssueAccessToken(Endpoint endpoint) {
-        ActionModel actionModel = new ActionModel();
-        actionModel.setName("Access Token Pre Issue");
-        actionModel.setDescription("This is a test pre issue access token type");
-        actionModel.setEndpoint(endpoint);
-
+    public int createActionType(ActionModel actionModel, String actionType) {
         try {
-            return restClient.createActionType(actionModel, PRE_ISSUE_ACCESS_TOKEN_TYPE);
+            return restClient.createActionType(actionModel, actionType);
         } catch (Exception e) {
-            throw new RuntimeException("Error while creating action of type pre issue access token for: " + actionModel.getName());
+            throw new RuntimeException("Error while creating the action type: " + actionType);
         }
     }
 }
