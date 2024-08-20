@@ -57,7 +57,7 @@ import org.wso2.identity.integration.test.rest.api.server.api.resource.v1.model.
 import org.wso2.identity.integration.test.rest.api.server.application.management.v1.model.AdvancedApplicationConfiguration;
 import org.wso2.identity.integration.test.rest.api.server.application.management.v1.model.ApplicationModel;
 import org.wso2.identity.integration.test.rest.api.server.application.management.v1.model.ApplicationPatchModel;
-import org.wso2.identity.integration.test.rest.api.server.application.management.v1.model.BusinessAPICreationModel;
+import org.wso2.identity.integration.test.rest.api.server.application.management.v1.model.DomainAPICreationModel;
 import org.wso2.identity.integration.test.rest.api.server.application.management.v1.model.ApplicationResponseModel;
 import org.wso2.identity.integration.test.rest.api.server.application.management.v1.model.AuthorizedAPICreationModel;
 import org.wso2.identity.integration.test.rest.api.server.application.management.v1.model.Certificate;
@@ -106,6 +106,7 @@ public class OAuth2ServiceAbstractIntegrationTest extends ISIntegrationTest {
     public static final String OIDC = "oidc";
     public static final String SAML = "saml";
     private final static int TOMCAT_PORT = 8490;
+    private final static Boolean REQUIRES_AUTHORIZATION = true;
 
     protected ApplicationManagementServiceClient appMgtclient;
     protected OauthAdminClient adminClient;
@@ -152,6 +153,31 @@ public class OAuth2ServiceAbstractIntegrationTest extends ISIntegrationTest {
         List<String> grantTypes = new ArrayList<>();
         Collections.addAll(grantTypes, "authorization_code", "implicit", "password", "client_credentials",
                 "refresh_token", "urn:ietf:params:oauth:grant-type:saml2-bearer", "iwa:ntlm");
+
+        List<String> callBackUrls = new ArrayList<>();
+        Collections.addAll(callBackUrls, OAuth2Constant.CALLBACK_URL);
+
+        OpenIDConnectConfiguration oidcConfig = new OpenIDConnectConfiguration();
+        oidcConfig.setGrantTypes(grantTypes);
+        oidcConfig.setCallbackURLs(callBackUrls);
+
+        InboundProtocols inboundProtocolsConfig = new InboundProtocols();
+        inboundProtocolsConfig.setOidc(oidcConfig);
+
+        application.setInboundProtocolConfiguration(inboundProtocolsConfig);
+        application.setName(SERVICE_PROVIDER_NAME);
+        application.setIsManagementApp(true);
+        String appId = addApplication(application);
+
+        return getApplication(appId);
+    }
+
+    public ApplicationResponseModel addApplication(String grantType) throws Exception {
+
+        ApplicationModel application = new ApplicationModel();
+
+        List<String> grantTypes = new ArrayList<>();
+        Collections.addAll(grantTypes, grantType);
 
         List<String> callBackUrls = new ArrayList<>();
         Collections.addAll(callBackUrls, OAuth2Constant.CALLBACK_URL);
@@ -1068,19 +1094,45 @@ public class OAuth2ServiceAbstractIntegrationTest extends ISIntegrationTest {
         });
     }
 
-    public String createBusinessAPIs(BusinessAPICreationModel businessAPICreationModel) {
+    public String createDomainAPIs(DomainAPICreationModel domainAPICreationModel) {
         try {
-            return restClient.createBusinessAPIResource(businessAPICreationModel);
+            return restClient.createDomainAPIResource(domainAPICreationModel);
         } catch (Exception e) {
-            throw new RuntimeException("Error while creating business API " + businessAPICreationModel.getName());
+            throw new RuntimeException("Error while creating business API " + domainAPICreationModel.getName());
         }
     }
 
-    public void authorizeBusinessAPIs(String applicationId, AuthorizedAPICreationModel authorizedAPICreationModel) {
+    public String createDomainAPIs(String externalServiceName, String externalServiceURI, List<String> domainScopes) {
+        DomainAPICreationModel domainAPICreationModel = new DomainAPICreationModel();
+        domainAPICreationModel.setName(externalServiceName);
+        domainAPICreationModel.setIdentifier(externalServiceURI);
+        domainAPICreationModel.setDescription("This is a test external service");
+        domainAPICreationModel.setRequiresAuthorization(REQUIRES_AUTHORIZATION);
+        List<ScopeGetModel> newScopes = new ArrayList<>();
+        domainScopes.forEach(scope -> {
+            ScopeGetModel newCustomScope = new ScopeGetModel();
+            newCustomScope.setName(scope);
+            newCustomScope.setDescription("This is a test scope");
+            newCustomScope.setDisplayName(scope);
+            newScopes.add(newCustomScope);
+        });
+        domainAPICreationModel.setScopes(newScopes);
         try {
-            restClient.addAPIAuthorizationToApplication(applicationId, authorizedAPICreationModel);
+            return restClient.createDomainAPIResource(domainAPICreationModel);
         } catch (Exception e) {
-            throw new RuntimeException("Error while authorizing business API " + authorizedAPICreationModel.getId() + " to application "
+            throw new RuntimeException("Error while creating domain API " + domainAPICreationModel.getName());
+        }
+    }
+
+    public void authorizeDomainAPIs(String applicationId, String businessAPIId, List<String> domainScopes) {
+        AuthorizedAPICreationModel authorizedDomainAPICreationModel = new AuthorizedAPICreationModel();
+        authorizedDomainAPICreationModel.setId(businessAPIId);
+        authorizedDomainAPICreationModel.setPolicyIdentifier("RBAC");
+        authorizedDomainAPICreationModel.setScopes(domainScopes);
+        try {
+            restClient.addAPIAuthorizationToApplication(applicationId, authorizedDomainAPICreationModel);
+        } catch (Exception e) {
+            throw new RuntimeException("Error while authorizing business API " + authorizedDomainAPICreationModel.getId() + " to application "
                     + applicationId, e);
         }
     }

@@ -39,7 +39,7 @@ import org.wso2.identity.integration.test.rest.api.server.api.resource.v1.model.
 import org.wso2.identity.integration.test.rest.api.server.application.management.v1.model.ApplicationListItem;
 import org.wso2.identity.integration.test.rest.api.server.application.management.v1.model.ApplicationListResponse;
 import org.wso2.identity.integration.test.rest.api.server.application.management.v1.model.ApplicationModel;
-import org.wso2.identity.integration.test.rest.api.server.application.management.v1.model.BusinessAPICreationModel;
+import org.wso2.identity.integration.test.rest.api.server.application.management.v1.model.DomainAPICreationModel;
 import org.wso2.identity.integration.test.rest.api.server.application.management.v1.model.ApplicationPatchModel;
 import org.wso2.identity.integration.test.rest.api.server.application.management.v1.model.ApplicationResponseModel;
 import org.wso2.identity.integration.test.rest.api.server.application.management.v1.model.ApplicationSharePOSTRequest;
@@ -490,11 +490,11 @@ public class OAuth2RestClient extends RestBaseClient {
     /**
      * Creates a business API
      *
-     * @param businessAPICreationModel
+     * @param domainAPICreationModel
      * @return ID of the created business API resource
      */
-    public String createBusinessAPIResource(BusinessAPICreationModel businessAPICreationModel) {
-        String jsonRequestBody = toJSONString(businessAPICreationModel);
+    public String createDomainAPIResource(DomainAPICreationModel domainAPICreationModel) {
+        String jsonRequestBody = toJSONString(domainAPICreationModel);
 
         AuthorizedBusinessAPIResponse authorizedBusinessAPIResponse;
         try (CloseableHttpResponse response = getResponseOfHttpPost(apiResourceManagementApiBasePath, jsonRequestBody, getHeaders())) {
@@ -503,7 +503,7 @@ public class OAuth2RestClient extends RestBaseClient {
             authorizedBusinessAPIResponse = jsonWriter.readValue(responseBody, AuthorizedBusinessAPIResponse.class);
             return authorizedBusinessAPIResponse.getId();
         } catch (Exception e) {
-            throw new RuntimeException("Error while creating business API " + businessAPICreationModel.getName());
+            throw new RuntimeException("Error while creating business API " + domainAPICreationModel.getName());
         }
     }
 

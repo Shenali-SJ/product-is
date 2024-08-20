@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class BusinessAPICreationModel {
+public class DomainAPICreationModel {
     private String name;
     private String identifier;
     private String description;
@@ -36,7 +36,7 @@ public class BusinessAPICreationModel {
 
     /**
      **/
-    public BusinessAPICreationModel displayName(String displayName) {
+    public DomainAPICreationModel displayName(String displayName) {
 
         this.name = displayName;
         return this;
@@ -54,7 +54,7 @@ public class BusinessAPICreationModel {
 
     /**
      **/
-    public BusinessAPICreationModel identifier(String identifier) {
+    public DomainAPICreationModel identifier(String identifier) {
 
         this.identifier = identifier;
         return this;
@@ -72,7 +72,7 @@ public class BusinessAPICreationModel {
 
     /**
      **/
-    public BusinessAPICreationModel description(String description) {
+    public DomainAPICreationModel description(String description) {
 
         this.description = description;
         return this;
@@ -90,7 +90,7 @@ public class BusinessAPICreationModel {
 
     /**
      **/
-    public BusinessAPICreationModel requiresAuthorization(Boolean requiresAuthorization) {
+    public DomainAPICreationModel requiresAuthorization(Boolean requiresAuthorization) {
 
         this.requiresAuthorization = requiresAuthorization;
         return this;
@@ -108,7 +108,7 @@ public class BusinessAPICreationModel {
 
     /**
      **/
-    public BusinessAPICreationModel scopes(List<ScopeGetModel> scopes) {
+    public DomainAPICreationModel scopes(List<ScopeGetModel> scopes) {
 
         this.scopes = scopes;
         return this;
@@ -124,7 +124,7 @@ public class BusinessAPICreationModel {
         this.scopes = scopes;
     }
 
-    public BusinessAPICreationModel addScopesItem(ScopeGetModel scopesItem) {
+    public DomainAPICreationModel addScopesItem(ScopeGetModel scopesItem) {
         if (this.scopes == null) {
             this.scopes = new ArrayList<>();
         }
@@ -141,12 +141,12 @@ public class BusinessAPICreationModel {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        BusinessAPICreationModel businessAPICreationModel = (BusinessAPICreationModel) o;
-        return Objects.equals(this.name, businessAPICreationModel.name) &&
-                Objects.equals(this.description, businessAPICreationModel.description) &&
-                Objects.equals(this.identifier, businessAPICreationModel.identifier) &&
-                Objects.equals(this.requiresAuthorization, businessAPICreationModel.requiresAuthorization) &&
-                Objects.equals(this.scopes, businessAPICreationModel.scopes);
+        DomainAPICreationModel domainAPICreationModel = (DomainAPICreationModel) o;
+        return Objects.equals(this.name, domainAPICreationModel.name) &&
+                Objects.equals(this.description, domainAPICreationModel.description) &&
+                Objects.equals(this.identifier, domainAPICreationModel.identifier) &&
+                Objects.equals(this.requiresAuthorization, domainAPICreationModel.requiresAuthorization) &&
+                Objects.equals(this.scopes, domainAPICreationModel.scopes);
     }
 
     @Override

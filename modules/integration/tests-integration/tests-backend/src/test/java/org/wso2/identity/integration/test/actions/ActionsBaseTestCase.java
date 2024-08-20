@@ -22,6 +22,7 @@ import org.wso2.carbon.automation.engine.context.TestUserMode;
 import org.wso2.identity.integration.common.clients.oauth.OauthAdminClient;
 import org.wso2.identity.integration.common.utils.ISIntegrationTest;
 import org.wso2.identity.integration.test.rest.api.server.action.management.v1.model.ActionModel;
+import org.wso2.identity.integration.test.rest.api.server.action.management.v1.model.AuthenticationType;
 import org.wso2.identity.integration.test.rest.api.server.action.management.v1.model.Endpoint;
 import org.wso2.identity.integration.test.restclients.ActionsRestClient;
 
@@ -44,7 +45,14 @@ public class ActionsBaseTestCase extends ISIntegrationTest {
         adminClient = new OauthAdminClient(backendURL, sessionCookie);
     }
 
-    public int createPreIssueAccessToken(Endpoint endpoint) {
+    public int createPreIssueAccessTokenType(String uri) {
+        AuthenticationType authenticationType = new AuthenticationType();
+        authenticationType.setType(AuthenticationType.TypeEnum.BASIC);
+
+        Endpoint endpoint = new Endpoint();
+        endpoint.setUri(uri);
+        endpoint.setAuthentication(authenticationType);
+
         ActionModel actionModel = new ActionModel();
         actionModel.setName("Access Token Pre Issue");
         actionModel.setDescription("This is a test pre issue access token type");

@@ -21,23 +21,16 @@ package org.wso2.identity.integration.test.actions;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import org.apache.commons.lang.ArrayUtils;
-import org.apache.http.HttpStatus;
 import org.json.JSONException;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.wso2.carbon.automation.engine.context.TestUserMode;
-import org.wso2.carbon.identity.application.common.model.xsd.AssociatedRolesConfig;
-import org.wso2.carbon.identity.application.common.model.xsd.ServiceProvider;
-import org.wso2.carbon.identity.oauth.stub.dto.OAuthConsumerAppDTO;
 import org.wso2.identity.integration.common.clients.oauth.OauthAdminClient;
 import org.wso2.identity.integration.test.oauth2.OAuth2ServiceAbstractIntegrationTest;
-import org.wso2.identity.integration.test.rest.api.server.action.management.v1.model.AuthenticationType;
-import org.wso2.identity.integration.test.rest.api.server.action.management.v1.model.Endpoint;
-import org.wso2.identity.integration.test.rest.api.server.api.resource.v1.model.ScopeGetModel;
-import org.wso2.identity.integration.test.rest.api.server.application.management.v1.model.AuthorizedAPICreationModel;
-import org.wso2.identity.integration.test.rest.api.server.application.management.v1.model.BusinessAPICreationModel;
+import org.wso2.identity.integration.test.rest.api.server.application.management.v1.model.ApplicationResponseModel;
+import org.wso2.identity.integration.test.rest.api.server.application.management.v1.model.OpenIDConnectConfiguration;
 import org.wso2.identity.integration.test.rest.api.server.roles.v2.model.Audience;
 import org.wso2.identity.integration.test.rest.api.server.roles.v2.model.Permission;
 import org.wso2.identity.integration.test.rest.api.server.roles.v2.model.RoleV2;
@@ -67,17 +60,18 @@ public class PreIssueAccessTokenTestCase extends ActionsBaseTestCase {
             return super.consumerSecret;
         }
     }
-    private static final String JWT = "JWT";
-    private static final String RBAC = "RBAC";
     private static final String USERS = "users";
     private static final String TEST_USER = "test_user";
     private static final String ADMIN_WSO2 = "Admin@wso2";
-    private static final String USERNAME_PROPERTY = "username";
-    private static final String PASSWORD_PROPERTY = "password";
     private static final String TEST_USER_GIVEN = "test_user_given";
     private static final String TEST_USER_GMAIL_COM = "test.user@gmail.com";
+    private static final String EXTERNAL_SERVICE_NAME = "TestExternalService";
+    private static final String EXTERNAL_SERVICE_URI = "https://wso2is.free.beeceptor.com";
+
+    private static final String PASSWORD_GRANT_TYPE = "password";
     private static final String APPLICATION_AUDIENCE = "APPLICATION";
     private static final String TEST_ROLE_APPLICATION = "test_role_application";
+
     private static final String INTERNAL_ACTION_MANAGEMENT_VIEW = "internal_action_mgt_view";
     private static final String INTERNAL_ACTION_MANAGEMENT_CREATE = "internal_action_mgt_create";
     private static final String INTERNAL_ACTION_MANAGEMENT_UPDATE = "internal_action_mgt_update";
@@ -94,28 +88,18 @@ public class PreIssueAccessTokenTestCase extends ActionsBaseTestCase {
     private static final String CUSTOM_SCOPE_1 = "test_custom_scope_1";
     private static final String CUSTOM_SCOPE_2 = "test_custom_scope_2";
     private static final String CUSTOM_SCOPE_3 = "test_custom_scope_3";
+
     private static final String SCIM2_USERS_API = "/o/scim2/Users";
     private static final String ACTIONS_API = "/api/server/v1/actions";
     private static final String APPLICATION_MANAGEMENT_API = "/api/server/v1/applications";
     private static final String API_RESOURCE_MANAGEMENT_API = "/api/server/v1/api-resources";
-    private final static Boolean REQUIRES_AUTHORIZATION = true;
+
     protected OAuth2ServiceHelper oAuth2Service;
 
     protected SCIM2RestClient scim2RestClient;
-    private String roleID;
-    private String userID;
-    private String appId;
 
-    private String consumerKeyStr;
-    private String consumerSecretStr;
     private String accessToken;
 
-    private String[] customScopesFromToken;
-
-    private List<String> consumerKeys = new ArrayList<>();
-    private List<String> consumerSecrets = new ArrayList<>();
-    private List<String> customScopes = new ArrayList<>();
-    private List<Permission> userPermissions = new ArrayList<>();
     @BeforeClass(alwaysRun = true)
     public void testInit() throws Exception {
 
@@ -128,6 +112,35 @@ public class PreIssueAccessTokenTestCase extends ActionsBaseTestCase {
         adminClient = new OauthAdminClient(backendURL, sessionCookie);
 
         setSystemproperties();
+
+        /* Pre Requisites */
+
+        ApplicationResponseModel application = oAuth2Service.addApplication(PASSWORD_GRANT_TYPE);
+
+        // creates systems APIs
+        if (!CarbonUtils.isLegacyAuthzRuntimeEnabled()) {
+            oAuth2Service.authorizeSystemAPIs(application.getId(), new ArrayList<>(Arrays.asList(SCIM2_USERS_API, ACTIONS_API,
+                    APPLICATION_MANAGEMENT_API, API_RESOURCE_MANAGEMENT_API)));
+        }
+
+        // creates domain APIs
+        List<String> customScopes = new ArrayList<>();
+        Collections.addAll(customScopes, CUSTOM_SCOPE_1, CUSTOM_SCOPE_2, CUSTOM_SCOPE_3);
+        String businessAPIId = oAuth2Service.createDomainAPIs(EXTERNAL_SERVICE_NAME, EXTERNAL_SERVICE_URI, customScopes);
+
+        // authorizes domain APIs
+        oAuth2Service.authorizeDomainAPIs(application.getId(), businessAPIId, customScopes);
+
+        // creates users and roles
+        List<Permission> permissions = addUserWithRole(application.getId(), customScopes);
+
+        // creates pre issue access token action type
+        createPreIssueAccessTokenType(EXTERNAL_SERVICE_URI);
+
+        // requests access token
+        OpenIDConnectConfiguration oidcConfig = oAuth2Service.getOIDCInboundDetailsOfApplication(application.getId());
+        String tenantedTokenURI = getTenantQualifiedURL(OAuth2Constant.ACCESS_TOKEN_ENDPOINT, tenantInfo.getDomain());
+        oAuth2Service.requestAccessToken(oidcConfig.getClientId(), oidcConfig.getClientSecret(), tenantedTokenURI, TEST_USER, ADMIN_WSO2, permissions);
     }
 
     // TODO: check what is wrong here
@@ -142,222 +155,6 @@ public class PreIssueAccessTokenTestCase extends ActionsBaseTestCase {
 //        restClient.closeHttpClient();
 //    }
 
-    /**
-     * Provides data for testing registration pre-requisites.
-     * Each dataset consists of an external service name and its uri.
-     *
-     * @return Two-dimensional array containing pairs of external service names and its uris.
-     */
-    @DataProvider(name = "getExternalServiceInfo")
-    public Object[][] getExternalServiceInfo() {
-
-        return new Object[][]{
-                {"TestExternalService", "https://wso2is.free.beeceptor.com"}
-        };
-    }
-
-    @Test(groups = "wso2.is", description = "Registers an application with specified audience type, grant type. " +
-            "Creates a role, adds users and associates users with roles. Subscribe to necessary API resources.",
-            dataProvider = "getExternalServiceInfo")
-    private void testRegisterPreRequisites(String externalServiceName, String externalServiceURI) throws Exception {
-        appId = registerApplication(externalServiceName, externalServiceURI);
-        roleID = createRoles(appId);
-        userID = createUser();
-        assignRoleToUser(roleID, userID);
-    }
-
-    private String registerApplication(String externalServiceName, String externalServiceURI) throws Exception {
-        OAuthConsumerAppDTO applicationDTO = oAuth2Service.getBasicOAuthApp(OAuth2Constant.CALLBACK_URL);
-        applicationDTO.setTokenType(JWT);
-        applicationDTO.setGrantTypes(OAuth2Constant.OAUTH2_GRANT_TYPE_RESOURCE_OWNER);
-
-        AssociatedRolesConfig associatedRolesConfig = new AssociatedRolesConfig();
-        associatedRolesConfig.setAllowedAudience(APPLICATION_AUDIENCE);
-        ServiceProvider serviceProvider = null;
-        try {
-            serviceProvider = oAuth2Service.registerApplicationAudienceServiceProvider(applicationDTO, associatedRolesConfig);
-        } catch (Exception e) {
-            throw new RuntimeException("Error occurred while creating service provider: " + applicationDTO.getApplicationName());
-        }
-
-        applicationDTO = adminClient.getOAuthAppByName(serviceProvider.getApplicationName());
-        consumerKeyStr = applicationDTO.getOauthConsumerKey();
-        consumerSecretStr = applicationDTO.getOauthConsumerSecret();
-
-        consumerKeys.add(oAuth2Service.getConsumerKey());
-        consumerSecrets.add(oAuth2Service.getConsumerSecret());
-
-        String applicationId = serviceProvider.getApplicationResourceId();
-
-        // Adds custom scopes related to the business API
-        customScopes.add(CUSTOM_SCOPE_1);
-        customScopes.add(CUSTOM_SCOPE_2);
-        customScopes.add(CUSTOM_SCOPE_3);
-
-        authorizeAPIs(applicationId, customScopes, externalServiceName, externalServiceURI);
-
-        return applicationId;
-    }
-
-    // TODO: add doc comments
-    private String createRoles(String appID) throws JSONException, IOException {
-
-        userPermissions.add(new Permission(INTERNAL_ACTION_MANAGEMENT_VIEW));
-        userPermissions.add(new Permission(INTERNAL_ACTION_MANAGEMENT_CREATE));
-        userPermissions.add(new Permission(INTERNAL_ACTION_MANAGEMENT_UPDATE));
-        userPermissions.add(new Permission(INTERNAL_ACTION_MANAGEMENT_DELETE));
-
-        userPermissions.add(new Permission(INTERNAL_ORG_USER_MANAGEMENT_LIST));
-        userPermissions.add(new Permission(INTERNAL_ORG_USER_MANAGEMENT_VIEW));
-        userPermissions.add(new Permission(INTERNAL_ORG_USER_MANAGEMENT_CREATE));
-        userPermissions.add(new Permission(INTERNAL_ORG_USER_MANAGEMENT_UPDATE));
-        userPermissions.add(new Permission(INTERNAL_ORG_USER_MANAGEMENT_DELETE));
-
-        userPermissions.add(new Permission(INTERNAL_APPLICATION_MANAGEMENT_VIEW));
-        userPermissions.add(new Permission(INTERNAL_APPLICATION_MANAGEMENT_UPDATE));
-
-        userPermissions.add(new Permission(INTERNAL_API_RESOURCE_VIEW));
-        userPermissions.add(new Permission(INTERNAL_API_RESOURCE_CREATE));
-
-        for (String customScope : customScopes) {
-            userPermissions.add(new Permission(customScope));
-        }
-
-        Audience roleAudience = new Audience(APPLICATION_AUDIENCE, appID);
-        RoleV2 role = new RoleV2(roleAudience, TEST_ROLE_APPLICATION, userPermissions, Collections.emptyList());
-
-        return oAuth2Service.addRole(role);
-    }
-
-    private String createUser() throws Exception {
-        UserObject userInfo = new UserObject();
-        userInfo.setUserName(TEST_USER);
-        userInfo.setPassword(ADMIN_WSO2);
-        userInfo.setName(new Name().givenName(TEST_USER_GIVEN));
-        userInfo.addEmail(new Email().value(TEST_USER_GMAIL_COM));
-        return scim2RestClient.createUser(userInfo);
-    }
-
-    private void assignRoleToUser(String roleID, String userID) throws IOException {
-        RoleItemAddGroupobj rolePatchReqObject = new RoleItemAddGroupobj();
-        rolePatchReqObject.setOp(RoleItemAddGroupobj.OpEnum.ADD);
-        rolePatchReqObject.setPath(USERS);
-        rolePatchReqObject.addValue(new ListObject().value(userID));
-        scim2RestClient.updateUserRole(new PatchOperationRequestObject().addOperations(rolePatchReqObject), roleID);
-    }
-
-    /**
-     * Authorizes system APIs and business APIs.
-     *
-     * @param applicationId Application id.
-     * @param customScopes
-     * @throws Exception
-     */
-    private void authorizeAPIs(String applicationId, List<String> customScopes, String externalServiceName, String externalServiceURI) throws Exception {
-        // Authorizes a few system APIs
-        if (!CarbonUtils.isLegacyAuthzRuntimeEnabled()) {
-            oAuth2Service.authorizeSystemAPIs(applicationId, new ArrayList<>(Arrays.asList(SCIM2_USERS_API, ACTIONS_API,
-                    APPLICATION_MANAGEMENT_API, API_RESOURCE_MANAGEMENT_API)));
-        }
-
-        // Creates business API
-        BusinessAPICreationModel businessAPICreationModel = new BusinessAPICreationModel();
-        businessAPICreationModel.setName(externalServiceName);
-        businessAPICreationModel.setIdentifier(externalServiceURI);
-        businessAPICreationModel.setDescription("This is a test external service");
-        businessAPICreationModel.setRequiresAuthorization(REQUIRES_AUTHORIZATION);
-        List<ScopeGetModel> newScopes = new ArrayList<>();
-        customScopes.forEach(scope -> {
-            ScopeGetModel newCustomScope = new ScopeGetModel();
-            newCustomScope.setName(scope);
-            newCustomScope.setDescription("This is a test scope");
-            newCustomScope.setDisplayName(scope);
-            newScopes.add(newCustomScope);
-        });
-        businessAPICreationModel.setScopes(newScopes);
-        String businessAPIID = oAuth2Service.createBusinessAPIs(businessAPICreationModel);
-
-        // Authorizes business APIs
-        AuthorizedAPICreationModel authorizedBusinessAPICreationModel = new AuthorizedAPICreationModel();
-        authorizedBusinessAPICreationModel.setId(businessAPIID);
-        authorizedBusinessAPICreationModel.setPolicyIdentifier(RBAC);
-        authorizedBusinessAPICreationModel.setScopes(customScopes);
-        oAuth2Service.authorizeBusinessAPIs(applicationId, authorizedBusinessAPICreationModel);
-    }
-
-    /**
-     * Provides data for creating pre issue access token action
-     * Each dataset consists of an endpoint uri and authentication type.
-     *
-     * @return Two-dimensional array containing pairs of endpoint uris and authentication types.
-     */
-    @DataProvider(name = "getEndpointDetails")
-    public Object[][] getEndpointDetails() {
-
-        return new Object[][]{
-                {"https://wso2is.free.beeceptor.com", "Basic"}
-        };
-    }
-
-    @Test(groups = "wso2.is", description = "Create an action of type PreIssueAccessToken",
-            dataProvider = "getEndpointDetails", dependsOnMethods = "testRegisterPreRequisites")
-    private void testCreatePreIssueAccessTokenAction(String uri, String authenticationTypeString) {
-        Endpoint endpoint = new Endpoint();
-        endpoint.setUri(uri);
-        AuthenticationType authenticationType = new AuthenticationType();
-        switch (authenticationTypeString.toUpperCase()) {
-            case "BASIC":
-                authenticationType.setType(AuthenticationType.TypeEnum.BASIC);
-                Map<String, Object> authProperties = new HashMap<>();
-                authProperties.put(USERNAME_PROPERTY, TEST_USER);
-                authProperties.put(PASSWORD_PROPERTY, ADMIN_WSO2);
-                authenticationType.setProperties(authProperties);
-                break;
-            default:
-                authenticationType.setType(AuthenticationType.TypeEnum.NONE);
-        }
-        endpoint.setAuthentication(authenticationType);
-
-        int statusCode = createPreIssueAccessToken(endpoint);
-        Assert.assertEquals(statusCode, HttpStatus.SC_CREATED);
-    }
-
-    private JWTClaimsSet extractJwtClaims(String jwtToken) throws ParseException {
-
-        SignedJWT signedJWT = SignedJWT.parse(jwtToken);
-        return signedJWT.getJWTClaimsSet();
-    }
-
-    /**
-     * Provides consumer keys and secrets for testing purposes.
-     * Each dataset consists of a consumer key and its corresponding consumer secret.
-     *
-     * @return Two-dimensional array containing pairs of consumer keys and secrets.
-     */
-    @DataProvider(name = "getConsumerKeysAndSecrets")
-    public Object[][] getConsumerKeysAndSecrets() {
-
-        Object[][] keysAndSecrets = new Object[consumerKeys.size()][2];
-        for (int i = 0; i < consumerKeys.size(); i++) {
-            keysAndSecrets[i][0] = consumerKeys.get(i);
-            keysAndSecrets[i][1] = consumerSecrets.get(i);
-        }
-        return keysAndSecrets;
-    }
-
-    @Test(groups = "wso2.is", description = "Gets an access token",
-            dataProvider = "getConsumerKeysAndSecrets", dependsOnMethods = "testCreatePreIssueAccessTokenAction")
-    public void testRequestAccessToken(String consumerKey, String consumerSecret) throws Exception {
-        String tenantedTokenURI = getTenantQualifiedURL(OAuth2Constant.ACCESS_TOKEN_ENDPOINT, tenantInfo.getDomain());
-        accessToken = oAuth2Service.requestAccessToken(consumerKey, consumerSecret, tenantedTokenURI, TEST_USER, ADMIN_WSO2, userPermissions);
-        Assert.assertNotNull(accessToken);
-    }
-
-    public String requestAccessToken(String consumerKey, String consumerSecret) throws Exception {
-        String tenantedTokenURI = getTenantQualifiedURL(OAuth2Constant.ACCESS_TOKEN_ENDPOINT, tenantInfo.getDomain());
-        return oAuth2Service.requestAccessToken(consumerKey, consumerSecret, tenantedTokenURI, TEST_USER, ADMIN_WSO2, userPermissions);
-    }
-
     @DataProvider(name = "getNewCustomScope")
     public Object[][] getNewCustomScope() {
         String[] scopesArray = new String[] {"new_test_custom_scope_1", "new_test_custom_scope_2", "new_test_custom_scope_3"};
@@ -367,7 +164,7 @@ public class PreIssueAccessTokenTestCase extends ActionsBaseTestCase {
         };
     }
     @Test(groups = "wso2.is", description = "Check if the added scope is present in the access token",
-            dataProvider = "getNewCustomScope", dependsOnMethods = "testRequestAccessToken")
+            dataProvider = "getNewCustomScope")
     public void testTokenScopeAddOperation(String scope, String[] newScopeArray) throws Exception {
         JWTClaimsSet jwtClaims = extractJwtClaims(accessToken);
 
@@ -499,8 +296,8 @@ public class PreIssueAccessTokenTestCase extends ActionsBaseTestCase {
     @DataProvider(name = "replaceAUDClaim")
     public Object[][] replaceAUDClaim() {
 
-        return new Object[][]{
-                {"aud", consumerKeyStr, "zzz2.com"}
+        return new Object[][]{ // todo change the middle value
+                {"aud", "consumerKeyStr", "zzz2.com"}
         };
     }
     @Test(groups = "wso2.is", description = "Check if the aud claim is present in the access token",
@@ -573,5 +370,76 @@ public class PreIssueAccessTokenTestCase extends ActionsBaseTestCase {
             String audValueString = jwtClaims.getStringClaim(audClaim);
             Assert.assertNotEquals(audValueString, removedAud);
         }
+    }
+
+    public String requestAccessToken(String consumerKey, String consumerSecret, List<Permission> permissions) throws Exception {
+        String tenantedTokenURI = getTenantQualifiedURL(OAuth2Constant.ACCESS_TOKEN_ENDPOINT, tenantInfo.getDomain());
+        return oAuth2Service.requestAccessToken(consumerKey, consumerSecret, tenantedTokenURI, TEST_USER, ADMIN_WSO2, permissions);
+    }
+
+    private JWTClaimsSet extractJwtClaims(String jwtToken) throws ParseException {
+
+        SignedJWT signedJWT = SignedJWT.parse(jwtToken);
+        return signedJWT.getJWTClaimsSet();
+    }
+
+    private List<Permission> addUserWithRole(String appID, List<String> customScopes) throws JSONException, IOException {
+        String userId;
+        String roleId;
+
+        // creates roles
+        List<Permission> permissions = addPermissions(customScopes);
+        Audience roleAudience = new Audience(APPLICATION_AUDIENCE, appID);
+        RoleV2 role = new RoleV2(roleAudience, TEST_ROLE_APPLICATION, permissions, Collections.emptyList());
+
+        roleId = oAuth2Service.addRole(role);
+
+        // creates user
+        UserObject userInfo = new UserObject();
+        userInfo.setUserName(TEST_USER);
+        userInfo.setPassword(ADMIN_WSO2);
+        userInfo.setName(new Name().givenName(TEST_USER_GIVEN));
+        userInfo.addEmail(new Email().value(TEST_USER_GMAIL_COM));
+        try {
+            userId = scim2RestClient.createUser(userInfo);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        // assigns role to the created user
+        RoleItemAddGroupobj rolePatchReqObject = new RoleItemAddGroupobj();
+        rolePatchReqObject.setOp(RoleItemAddGroupobj.OpEnum.ADD);
+        rolePatchReqObject.setPath(USERS);
+        rolePatchReqObject.addValue(new ListObject().value(userId));
+        scim2RestClient.updateUserRole(new PatchOperationRequestObject().addOperations(rolePatchReqObject), roleId);
+
+        return permissions;
+    }
+
+    private List<Permission> addPermissions(List<String> customScopes) {
+        List<Permission> userPermissions = new ArrayList<>();
+
+        Collections.addAll(userPermissions,
+                new Permission(INTERNAL_ACTION_MANAGEMENT_VIEW),
+                new Permission(INTERNAL_ACTION_MANAGEMENT_CREATE),
+                new Permission(INTERNAL_ACTION_MANAGEMENT_UPDATE),
+                new Permission(INTERNAL_ACTION_MANAGEMENT_DELETE),
+
+                new Permission(INTERNAL_ORG_USER_MANAGEMENT_LIST),
+                new Permission(INTERNAL_ORG_USER_MANAGEMENT_VIEW),
+                new Permission(INTERNAL_ORG_USER_MANAGEMENT_CREATE),
+                new Permission(INTERNAL_ORG_USER_MANAGEMENT_UPDATE),
+                new Permission(INTERNAL_ORG_USER_MANAGEMENT_DELETE),
+
+                new Permission(INTERNAL_APPLICATION_MANAGEMENT_VIEW),
+                new Permission(INTERNAL_APPLICATION_MANAGEMENT_UPDATE),
+
+                new Permission(INTERNAL_API_RESOURCE_VIEW),
+                new Permission(INTERNAL_API_RESOURCE_CREATE)
+        );
+
+        customScopes.forEach(scope -> userPermissions.add(new Permission(scope)));
+
+        return userPermissions;
     }
 }
