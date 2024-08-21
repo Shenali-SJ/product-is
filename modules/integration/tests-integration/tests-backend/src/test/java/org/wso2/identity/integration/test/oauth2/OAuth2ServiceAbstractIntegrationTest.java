@@ -1068,7 +1068,7 @@ public class OAuth2ServiceAbstractIntegrationTest extends ISIntegrationTest {
      * @param apiIdentifiers API identifiers to authorize.
      * @throws Exception Error occured while authorizing APIs.
      */
-    public void authorizeSystemAPIs(String applicationId, List<String> apiIdentifiers) throws Exception {
+    public void authorizeSystemAPIs(String applicationId, List<String> apiIdentifiers) {
 
         apiIdentifiers.stream().forEach(apiIdentifier -> {
             try {

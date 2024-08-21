@@ -27,22 +27,25 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.wso2.carbon.automation.engine.context.TestUserMode;
-import org.wso2.identity.integration.common.clients.oauth.OauthAdminClient;
 import org.wso2.identity.integration.test.oauth2.OAuth2ServiceAbstractIntegrationTest;
+import org.wso2.identity.integration.test.rest.api.server.action.management.v1.model.ActionModel;
+import org.wso2.identity.integration.test.rest.api.server.action.management.v1.model.AuthenticationType;
+import org.wso2.identity.integration.test.rest.api.server.action.management.v1.model.Endpoint;
 import org.wso2.identity.integration.test.rest.api.server.application.management.v1.model.ApplicationResponseModel;
 import org.wso2.identity.integration.test.rest.api.server.application.management.v1.model.OpenIDConnectConfiguration;
 import org.wso2.identity.integration.test.rest.api.server.roles.v2.model.Audience;
 import org.wso2.identity.integration.test.rest.api.server.roles.v2.model.Permission;
 import org.wso2.identity.integration.test.rest.api.server.roles.v2.model.RoleV2;
 import org.wso2.identity.integration.test.rest.api.user.common.model.*;
-import org.wso2.identity.integration.test.restclients.ActionsRestClient;
 import org.wso2.identity.integration.test.restclients.SCIM2RestClient;
 import org.wso2.identity.integration.test.utils.CarbonUtils;
 import org.wso2.identity.integration.test.utils.OAuth2Constant;
-
 import java.io.IOException;
 import java.text.ParseException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 public class PreIssueAccessTokenTestCase extends ActionsBaseTestCase {
     private class OAuth2ServiceHelper extends OAuth2ServiceAbstractIntegrationTest {
@@ -60,6 +63,7 @@ public class PreIssueAccessTokenTestCase extends ActionsBaseTestCase {
             return super.consumerSecret;
         }
     }
+
     private static final String USERS = "users";
     private static final String TEST_USER = "test_user";
     private static final String ADMIN_WSO2 = "Admin@wso2";
@@ -67,6 +71,7 @@ public class PreIssueAccessTokenTestCase extends ActionsBaseTestCase {
     private static final String TEST_USER_GMAIL_COM = "test.user@gmail.com";
     private static final String EXTERNAL_SERVICE_NAME = "TestExternalService";
     private static final String EXTERNAL_SERVICE_URI = "https://wso2is.free.beeceptor.com";
+    private static final String PRE_ISSUE_ACCESS_TOKEN_TYPE = "preIssueAccessToken";
 
     private static final String PASSWORD_GRANT_TYPE = "password";
     private static final String APPLICATION_AUDIENCE = "APPLICATION";
@@ -106,10 +111,7 @@ public class PreIssueAccessTokenTestCase extends ActionsBaseTestCase {
         super.init(TestUserMode.TENANT_USER);
 
         oAuth2Service = this.new OAuth2ServiceHelper();
-
-        restClient = new ActionsRestClient(serverURL, tenantInfo);
         scim2RestClient = new SCIM2RestClient(serverURL, tenantInfo);
-        adminClient = new OauthAdminClient(backendURL, sessionCookie);
 
         setSystemproperties();
 
@@ -135,7 +137,7 @@ public class PreIssueAccessTokenTestCase extends ActionsBaseTestCase {
         List<Permission> permissions = addUserWithRole(application.getId(), customScopes);
 
         // creates pre issue access token action type
-        createPreIssueAccessTokenType(EXTERNAL_SERVICE_URI);
+        createPreIssueAccessTokenAction();
 
         // requests access token
         OpenIDConnectConfiguration oidcConfig = oAuth2Service.getOIDCInboundDetailsOfApplication(application.getId());
@@ -157,12 +159,13 @@ public class PreIssueAccessTokenTestCase extends ActionsBaseTestCase {
 
     @DataProvider(name = "getNewCustomScope")
     public Object[][] getNewCustomScope() {
-        String[] scopesArray = new String[] {"new_test_custom_scope_1", "new_test_custom_scope_2", "new_test_custom_scope_3"};
+        String[] scopesArray = new String[]{"new_test_custom_scope_1", "new_test_custom_scope_2", "new_test_custom_scope_3"};
 
         return new Object[][]{
                 {"scope", scopesArray},
         };
     }
+
     @Test(groups = "wso2.is", description = "Check if the added scope is present in the access token",
             dataProvider = "getNewCustomScope")
     public void testTokenScopeAddOperation(String scope, String[] newScopeArray) throws Exception {
@@ -181,6 +184,7 @@ public class PreIssueAccessTokenTestCase extends ActionsBaseTestCase {
                 {"aud", "zzz1.com"}
         };
     }
+
     @Test(groups = "wso2.is", description = "Check if the aud claim is present in the access token",
             dataProvider = "getNewAUDClaim", dependsOnMethods = "testRequestAccessToken")
     public void testTokenAudClaimAddOperation(String audClaim, String newAud) throws Exception {
@@ -281,13 +285,15 @@ public class PreIssueAccessTokenTestCase extends ActionsBaseTestCase {
                 {"scope", "test_custom_scope_3", "replaced_scope"},
         };
     }
+
     @Test(groups = "wso2.is", description = "Check if the added scope is present in the access token",
             dataProvider = "replaceCustomScope", dependsOnMethods = "testTokenScopeAddOperation")
     public void testTokenScopeReplaceOperation(String scope, String oldScope, String replacedScope) throws Exception {
         JWTClaimsSet jwtClaims = extractJwtClaims(accessToken);
 
         String scopeString = jwtClaims.getStringClaim(scope);
-        String[] scopes = scopeString.split("\\s+");;
+        String[] scopes = scopeString.split("\\s+");
+        ;
 
         Assert.assertTrue(ArrayUtils.contains(scopes, replacedScope));
         Assert.assertFalse(ArrayUtils.contains(scopes, oldScope));
@@ -300,6 +306,7 @@ public class PreIssueAccessTokenTestCase extends ActionsBaseTestCase {
                 {"aud", "consumerKeyStr", "zzz2.com"}
         };
     }
+
     @Test(groups = "wso2.is", description = "Check if the aud claim is present in the access token",
             dataProvider = "replaceAUDClaim", dependsOnMethods = "testTokenAudClaimAddOperation")
     public void testTokenAudClaimReplaceOperation(String audClaim, String oldAud, String replacedAud) throws Exception {
@@ -323,6 +330,7 @@ public class PreIssueAccessTokenTestCase extends ActionsBaseTestCase {
                 {"expires_in", 7200}
         };
     }
+
     @Test(groups = "wso2.is", description = "Check if the aud claim is present in the access token",
             dataProvider = "replaceExpiresInClaim", dependsOnMethods = "testRequestAccessToken")
     public void testTokenExpiresInClaimReplaceOperation(String expiresInClaim, long expiresIn) throws Exception {
@@ -340,13 +348,15 @@ public class PreIssueAccessTokenTestCase extends ActionsBaseTestCase {
                 {"scope", "test_custom_scope_2"},
         };
     }
+
     @Test(groups = "wso2.is", description = "Check if the added scope is present in the access token",
             dataProvider = "removeCustomScope", dependsOnMethods = "testTokenScopeReplaceOperation")
     public void testTokenScopeRemoveOperation(String scope, String removedScope) throws Exception {
         JWTClaimsSet jwtClaims = extractJwtClaims(accessToken);
 
         String scopeString = jwtClaims.getStringClaim(scope);
-        String[] scopes = scopeString.split("\\s+");;
+        String[] scopes = scopeString.split("\\s+");
+        ;
 
         Assert.assertFalse(ArrayUtils.contains(scopes, removedScope));
     }
@@ -358,6 +368,7 @@ public class PreIssueAccessTokenTestCase extends ActionsBaseTestCase {
                 {"aud", "zzz1.com"}
         };
     }
+
     @Test(groups = "wso2.is", description = "Check if the aud claim is present in the access token",
             dataProvider = "removeAUDClaim", dependsOnMethods = "testTokenAudClaimReplaceOperation")
     public void testTokenAudClaimRemoveOperation(String audClaim, String removedAud) throws Exception {
@@ -372,9 +383,23 @@ public class PreIssueAccessTokenTestCase extends ActionsBaseTestCase {
         }
     }
 
-    public String requestAccessToken(String consumerKey, String consumerSecret, List<Permission> permissions) throws Exception {
-        String tenantedTokenURI = getTenantQualifiedURL(OAuth2Constant.ACCESS_TOKEN_ENDPOINT, tenantInfo.getDomain());
-        return oAuth2Service.requestAccessToken(consumerKey, consumerSecret, tenantedTokenURI, TEST_USER, ADMIN_WSO2, permissions);
+    private void createPreIssueAccessTokenAction() {
+        AuthenticationType authenticationType = new AuthenticationType();
+        authenticationType.setType(AuthenticationType.TypeEnum.BASIC);
+
+        Endpoint endpoint = new Endpoint();
+        endpoint.setUri(EXTERNAL_SERVICE_URI);
+        endpoint.setAuthentication(authenticationType);
+
+        ActionModel actionModel = new ActionModel();
+        actionModel.setName("Access Token Pre Issue");
+        actionModel.setDescription("This is a test pre issue access token type");
+        actionModel.setEndpoint(endpoint);
+        try {
+            createAction(actionModel, PRE_ISSUE_ACCESS_TOKEN_TYPE);
+        } catch (IOException e) {
+            throw new RuntimeException("Error while creating pre issue access token " + actionModel.getName());
+        }
     }
 
     private JWTClaimsSet extractJwtClaims(String jwtToken) throws ParseException {

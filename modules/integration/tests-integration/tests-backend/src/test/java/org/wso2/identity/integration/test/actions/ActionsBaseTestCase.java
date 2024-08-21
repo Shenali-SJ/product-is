@@ -19,17 +19,14 @@
 package org.wso2.identity.integration.test.actions;
 
 import org.wso2.carbon.automation.engine.context.TestUserMode;
-import org.wso2.identity.integration.common.clients.oauth.OauthAdminClient;
 import org.wso2.identity.integration.common.utils.ISIntegrationTest;
 import org.wso2.identity.integration.test.rest.api.server.action.management.v1.model.ActionModel;
-import org.wso2.identity.integration.test.rest.api.server.action.management.v1.model.AuthenticationType;
-import org.wso2.identity.integration.test.rest.api.server.action.management.v1.model.Endpoint;
 import org.wso2.identity.integration.test.restclients.ActionsRestClient;
+
+import java.io.IOException;
 
 public class ActionsBaseTestCase extends ISIntegrationTest {
     protected ActionsRestClient restClient;
-    protected OauthAdminClient adminClient;
-    private static final String PRE_ISSUE_ACCESS_TOKEN_TYPE = "preIssueAccessToken";
 
     /**
      * Initialize.
@@ -42,26 +39,9 @@ public class ActionsBaseTestCase extends ISIntegrationTest {
         super.init(userMode);
 
         restClient = new ActionsRestClient(serverURL, tenantInfo);
-        adminClient = new OauthAdminClient(backendURL, sessionCookie);
     }
 
-    public int createPreIssueAccessTokenType(String uri) {
-        AuthenticationType authenticationType = new AuthenticationType();
-        authenticationType.setType(AuthenticationType.TypeEnum.BASIC);
-
-        Endpoint endpoint = new Endpoint();
-        endpoint.setUri(uri);
-        endpoint.setAuthentication(authenticationType);
-
-        ActionModel actionModel = new ActionModel();
-        actionModel.setName("Access Token Pre Issue");
-        actionModel.setDescription("This is a test pre issue access token type");
-        actionModel.setEndpoint(endpoint);
-
-        try {
-            return restClient.createActionType(actionModel, PRE_ISSUE_ACCESS_TOKEN_TYPE);
-        } catch (Exception e) {
-            throw new RuntimeException("Error while creating action of type pre issue access token for: " + actionModel.getName());
-        }
+    public int createAction(ActionModel actionModel, String actionType) throws IOException {
+        return restClient.createActionType(actionModel, actionType);
     }
 }
