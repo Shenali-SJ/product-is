@@ -153,12 +153,13 @@ public class PreIssueAccessTokenPasswordGrantTestCase extends ActionsBaseTestCas
     public void atEnd() throws Exception {
 
         restClient = null;
+        deleteAction(PRE_ISSUE_ACCESS_TOKEN_API_PATH, actionId);
+        deleteRole(roleId);
         deleteApp(applicationId);
         deleteDomainAPI(domainAPIId);
         scim2RestClient.deleteUser(userId);
         scim2RestClient = null;
         MockServer.shutDownMockServer();
-        deleteAction(PRE_ISSUE_ACCESS_TOKEN_API_PATH, actionId);
         accessToken = null;
         jwtClaims = null;
     }
