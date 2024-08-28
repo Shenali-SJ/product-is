@@ -55,10 +55,23 @@ public class ActionsBaseTestCase extends OAuth2ServiceAbstractIntegrationTest {
      * @param actionType  Type of action
      * @param actionModel Request object to create the action
      * @return Status code of the action creation
-     * @throws IOException If an error occurred while creating the exception
+     * @throws IOException If an error occurred while creating the action
      */
-    public int createAction(String actionType, ActionModel actionModel) throws IOException {
+    public String createAction(String actionType, ActionModel actionModel) throws IOException {
 
         return restClient.createActionType(actionModel, actionType);
+    }
+
+    /**
+     * Delete an action.
+     *
+     * @param actionType Type of action
+     * @param actionId   ID of the action
+     * @return Status code of the action creation
+     * @throws IOException If an error occurred while deleting the action
+     */
+    public int deleteAction(String actionType, String actionId) throws IOException {
+
+        return restClient.deleteActionType(actionType, actionId);
     }
 }

@@ -490,22 +490,35 @@ public class OAuth2RestClient extends RestBaseClient {
     }
 
     /**
-     * Creates a domain API
+     * Creates a domain API.
      *
      * @param domainAPICreationModel Domain API create request model
      * @return ID of the created domain API resource
      */
-    public String createDomainAPIResource(DomainAPICreationModel domainAPICreationModel) {
+    public String createDomainAPIResource(DomainAPICreationModel domainAPICreationModel) throws IOException {
+
         String jsonRequestBody = toJSONString(domainAPICreationModel);
 
-        AuthorizedDomainAPIResponse authorizedDomainAPIResponse;
-        try (CloseableHttpResponse response = getResponseOfHttpPost(apiResourceManagementApiBasePath, jsonRequestBody, getHeaders())) {
-            String responseBody = EntityUtils.toString(response.getEntity());
-            ObjectMapper jsonWriter = new ObjectMapper(new JsonFactory());
-            authorizedDomainAPIResponse = jsonWriter.readValue(responseBody, AuthorizedDomainAPIResponse.class);
-            return authorizedDomainAPIResponse.getId();
-        } catch (Exception e) {
-            throw new RuntimeException("Error while creating domain API " + domainAPICreationModel.getName());
+        try (CloseableHttpResponse response = getResponseOfHttpPost(apiResourceManagementApiBasePath, jsonRequestBody,
+                getHeaders())) {
+            String[] locationElements = response.getHeaders(LOCATION_HEADER)[0].toString().split(PATH_SEPARATOR);
+            return locationElements[locationElements.length - 1];
+        }
+    }
+
+    /**
+     * Deletes a domain API.
+     *
+     * @param domainAPIId ID of the domain API to be deleted
+     * @return Status code of the action creation
+     * @throws IOException If an error occurred while deleting the domain API
+     */
+    public int deleteDomainAPIResource(String domainAPIId) throws IOException {
+
+        String endpointUrl = apiResourceManagementApiBasePath + "/" + domainAPIId;
+
+        try (CloseableHttpResponse response = getResponseOfHttpDelete(endpointUrl, getHeaders())) {
+            return response.getStatusLine().getStatusCode();
         }
     }
 

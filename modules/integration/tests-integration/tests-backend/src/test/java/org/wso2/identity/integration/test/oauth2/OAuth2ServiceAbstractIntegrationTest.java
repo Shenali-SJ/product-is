@@ -1110,7 +1110,13 @@ public class OAuth2ServiceAbstractIntegrationTest extends ISIntegrationTest {
 		return null;
 	}
 
-	public String createDomainAPIs(DomainAPICreationModel domainAPICreationModel) {
+	/**
+	 * Create a domain API.
+	 *
+	 * @param domainAPICreationModel Domain API creation request model
+	 * @return ID of the created Domain API
+	 */
+	public String createDomainAPI(DomainAPICreationModel domainAPICreationModel) {
 
 		try {
 			return restClient.createDomainAPIResource(domainAPICreationModel);
@@ -1120,8 +1126,16 @@ public class OAuth2ServiceAbstractIntegrationTest extends ISIntegrationTest {
 		}
 	}
 
-	public String createDomainAPIs(String externalServiceName, String externalServiceURI,
-								   List<String> domainScopes) {
+	/**
+	 * Create a domain API with an external service integrated.
+	 *
+	 * @param externalServiceName Name of the external service to be integrated
+	 * @param externalServiceURI  URL of the external service
+	 * @param domainScopes        Custom scopes related to the domain API
+	 * @return ID of the created domain API resource
+	 */
+	public String createDomainAPI(String externalServiceName, String externalServiceURI,
+								  List<String> domainScopes) {
 
 		DomainAPICreationModel domainAPICreationModel = new DomainAPICreationModel();
 		domainAPICreationModel.setName(externalServiceName);
@@ -1145,6 +1159,28 @@ public class OAuth2ServiceAbstractIntegrationTest extends ISIntegrationTest {
 		}
 	}
 
+	/**
+	 * Delete a domain API.
+	 *
+	 * @param domainAPIId ID of the domain API
+	 * @return Status code of the domain API deletion
+	 */
+	public int deleteDomainAPI(String domainAPIId) {
+
+		try {
+			return restClient.deleteDomainAPIResource(domainAPIId);
+		} catch (IOException e) {
+			throw new RuntimeException("Error while deleting domain API of Id " + domainAPIId);
+		}
+	}
+
+	/**
+	 * Authorize a domain API to an application.
+	 *
+	 * @param applicationId ID of the application
+	 * @param domainAPIId ID of the domain API to be authorized
+	 * @param domainScopes Custom scopes related to the domain API
+	 */
 	public void authorizeDomainAPIs(String applicationId, String domainAPIId, List<String> domainScopes) {
 
 		AuthorizedAPICreationModel authorizedDomainAPICreationModel = new AuthorizedAPICreationModel();

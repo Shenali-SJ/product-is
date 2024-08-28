@@ -16,6 +16,8 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMoc
  */
 public class MockServer {
 
+    private static WireMockServer wireMockServer;
+
     /**
      * Create a mock server with wiremock.
      *
@@ -23,7 +25,7 @@ public class MockServer {
      */
     public static void createMockServer(String mockEndpoint) throws Exception {
 
-        WireMockServer wireMockServer = new WireMockServer(wireMockConfig().port(8587));
+        wireMockServer = new WireMockServer(wireMockConfig().port(8587));
 
         wireMockServer.start();
 
@@ -131,5 +133,13 @@ public class MockServer {
         } catch (Exception e) {
             throw new Exception("Error occurred while creating the mock server: " + e);
         }
+    }
+
+    /**
+     * Shut down the wiremock server instance.
+     */
+    public static void shutDownMockServer() {
+
+        wireMockServer.stop();
     }
 }

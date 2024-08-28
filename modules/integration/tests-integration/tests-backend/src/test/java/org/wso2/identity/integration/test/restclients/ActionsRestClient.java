@@ -62,9 +62,9 @@ public class ActionsRestClient extends RestBaseClient {
      * @param actionModel Request object to create the action
      * @param actionType  Type of the action
      * @return Status code of the action creation
-     * @throws IOException If an error occured while creating the action
+     * @throws IOException If an error occurred while creating the action
      */
-    public int createActionType(ActionModel actionModel, String actionType) throws IOException {
+    public String createActionType(ActionModel actionModel, String actionType) throws IOException {
 
         String jsonRequestBody = toJSONString(actionModel);
 
@@ -72,6 +72,25 @@ public class ActionsRestClient extends RestBaseClient {
         endPointUrl = getActionEndpointOfType(actionType);
 
         try (CloseableHttpResponse response = getResponseOfHttpPost(endPointUrl, jsonRequestBody, getHeaders())) {
+            String[] locationElements = response.getHeaders(LOCATION_HEADER)[0].toString().split(PATH_SEPARATOR);
+            return locationElements[locationElements.length - 1];
+        }
+    }
+
+    /**
+     * Delete an action of the specified type by the provided ID.
+     *
+     * @param actionType Type of action
+     * @param actionId   ID of the action
+     * @return Status code of the action deletion
+     * @throws IOException If an error occurred while deleting the action
+     */
+    public int deleteActionType(String actionType, String actionId) throws IOException {
+
+        String endPointUrl;
+        endPointUrl = getActionEndpointOfType(actionType) + "/" + actionId;
+
+        try (CloseableHttpResponse response = getResponseOfHttpDelete(endPointUrl, getHeaders())) {
             return response.getStatusLine().getStatusCode();
         }
     }

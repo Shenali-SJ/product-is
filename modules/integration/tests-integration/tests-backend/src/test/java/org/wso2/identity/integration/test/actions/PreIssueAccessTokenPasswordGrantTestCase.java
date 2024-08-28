@@ -23,6 +23,7 @@ import com.nimbusds.jwt.SignedJWT;
 import org.apache.commons.lang.ArrayUtils;
 import org.json.JSONException;
 import org.testng.Assert;
+import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import org.wso2.carbon.automation.engine.context.TestUserMode;
@@ -107,6 +108,11 @@ public class PreIssueAccessTokenPasswordGrantTestCase extends ActionsBaseTestCas
     protected SCIM2RestClient scim2RestClient;
     private String accessToken;
     private String clientId;
+    private String actionId;
+    private String applicationId;
+    private String domainAPIId;
+    private String userId;
+    private String roleId;
     private JWTClaimsSet jwtClaims;
 
     /**
@@ -126,20 +132,35 @@ public class PreIssueAccessTokenPasswordGrantTestCase extends ActionsBaseTestCas
         List<String> customScopes = Arrays.asList(CUSTOM_SCOPE_1, CUSTOM_SCOPE_2, CUSTOM_SCOPE_3);
 
         ApplicationResponseModel application = addApplicationWithGrantType(PASSWORD_GRANT_TYPE);
+        applicationId = application.getId();
         if (!CarbonUtils.isLegacyAuthzRuntimeEnabled()) {
-            authorizeSystemAPIs(application.getId(), new ArrayList<>(Arrays.asList(SCIM2_USERS_API, ACTIONS_API,
+            authorizeSystemAPIs(applicationId, new ArrayList<>(Arrays.asList(SCIM2_USERS_API, ACTIONS_API,
                     APPLICATION_MANAGEMENT_API, API_RESOURCE_MANAGEMENT_API)));
         }
-        String domainAPIId = createDomainAPIs(EXTERNAL_SERVICE_NAME, EXTERNAL_SERVICE_URI, customScopes);
-        authorizeDomainAPIs(application.getId(), domainAPIId, customScopes);
+        domainAPIId = createDomainAPI(EXTERNAL_SERVICE_NAME, EXTERNAL_SERVICE_URI, customScopes);
+        authorizeDomainAPIs(applicationId, domainAPIId, customScopes);
 
-        addUserWithRole(application.getId(), customScopes);
+        addUserWithRole(applicationId, customScopes);
 
         MockServer.createMockServer(MOCK_SERVER_ENDPOINT);
-        createPreIssueAccessTokenAction();
+        actionId = createPreIssueAccessTokenAction();
 
         accessToken = retrieveAccessToken(application.getId(), customScopes);
         jwtClaims = extractJwtClaims(accessToken);
+    }
+
+    @AfterClass(alwaysRun = true)
+    public void atEnd() throws Exception {
+
+        restClient = null;
+        deleteApp(applicationId);
+        deleteDomainAPI(domainAPIId);
+        scim2RestClient.deleteUser(userId);
+        scim2RestClient = null;
+        MockServer.shutDownMockServer();
+        deleteAction(PRE_ISSUE_ACCESS_TOKEN_API_PATH, actionId);
+        accessToken = null;
+        jwtClaims = null;
     }
 
     @Test(groups = "wso2.is", description = "Verify the presence of the updated scopes in the access token")
@@ -216,7 +237,7 @@ public class PreIssueAccessTokenPasswordGrantTestCase extends ActionsBaseTestCas
     /**
      * Creates an action for pre-issuing an access token with basic authentication.
      */
-    private void createPreIssueAccessTokenAction() {
+    private String createPreIssueAccessTokenAction() {
 
         AuthenticationType authenticationType = new AuthenticationType();
         authenticationType.setType(AuthenticationType.TypeEnum.BASIC); // todo handle mock server authorization
@@ -235,7 +256,7 @@ public class PreIssueAccessTokenPasswordGrantTestCase extends ActionsBaseTestCas
         actionModel.setEndpoint(endpoint);
 
         try {
-            createAction(PRE_ISSUE_ACCESS_TOKEN_API_PATH, actionModel);
+            return createAction(PRE_ISSUE_ACCESS_TOKEN_API_PATH, actionModel);
         } catch (IOException e) {
             throw new RuntimeException("Error while creating pre issue access token " + actionModel.getName());
         }
@@ -296,7 +317,7 @@ public class PreIssueAccessTokenPasswordGrantTestCase extends ActionsBaseTestCas
         List<Permission> permissions = addPermissions(customScopes);
         Audience roleAudience = new Audience(APPLICATION_AUDIENCE, appID);
         RoleV2 role = new RoleV2(roleAudience, TEST_ROLE_APPLICATION, permissions, Collections.emptyList());
-        String roleId = addRole(role);
+        roleId = addRole(role);
 
         // Creates user
         UserObject userInfo = new UserObject();
@@ -304,7 +325,7 @@ public class PreIssueAccessTokenPasswordGrantTestCase extends ActionsBaseTestCas
         userInfo.setPassword(ADMIN_WSO2);
         userInfo.setName(new Name().givenName(TEST_USER_GIVEN));
         userInfo.addEmail(new Email().value(TEST_USER_GMAIL_COM));
-        String userId = scim2RestClient.createUser(userInfo);
+        userId = scim2RestClient.createUser(userInfo);
 
         // Assigns role to the created user
         RoleItemAddGroupobj rolePatchReqObject = new RoleItemAddGroupobj();
