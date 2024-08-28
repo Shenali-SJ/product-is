@@ -1111,6 +1111,7 @@ public class OAuth2ServiceAbstractIntegrationTest extends ISIntegrationTest {
 	}
 
 	public String createDomainAPIs(DomainAPICreationModel domainAPICreationModel) {
+
 		try {
 			return restClient.createDomainAPIResource(domainAPICreationModel);
 		} catch (Exception e) {

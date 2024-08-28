@@ -75,40 +75,8 @@ public class MockServer {
                     "            \"op\": \"add\",\n" +
                     "            \"path\": \"/accessToken/claims/-\",\n" +
                     "            \"value\": {\n" +
-                    "                \"name\": \"custom_claim_string_2\",\n" +
-                    "                \"value\": \"testCustomClaim2\"\n" +
-                    "            }\n" +
-                    "        },\n" +
-                    "        {\n" +
-                    "            \"op\": \"add\",\n" +
-                    "            \"path\": \"/accessToken/claims/-\",\n" +
-                    "            \"value\": {\n" +
-                    "                \"name\": \"custom_claim_string_3\",\n" +
-                    "                \"value\": \"testCustomClaim3\"\n" +
-                    "            }\n" +
-                    "        },\n" +
-                    "        {\n" +
-                    "            \"op\": \"add\",\n" +
-                    "            \"path\": \"/accessToken/claims/-\",\n" +
-                    "            \"value\": {\n" +
                     "                \"name\": \"custom_claim_number_1\",\n" +
                     "                \"value\": 78\n" +
-                    "            }\n" +
-                    "        },\n" +
-                    "        {\n" +
-                    "            \"op\": \"add\",\n" +
-                    "            \"path\": \"/accessToken/claims/-\",\n" +
-                    "            \"value\": {\n" +
-                    "                \"name\": \"custom_claim_number_2\",\n" +
-                    "                \"value\": 50\n" +
-                    "            }\n" +
-                    "        },\n" +
-                    "        {\n" +
-                    "            \"op\": \"add\",\n" +
-                    "            \"path\": \"/accessToken/claims/-\",\n" +
-                    "            \"value\": {\n" +
-                    "                \"name\": \"custom_claim_number_3\",\n" +
-                    "                \"value\": 32\n" +
                     "            }\n" +
                     "        },\n" +
                     "        {\n" +
@@ -123,51 +91,11 @@ public class MockServer {
                     "            \"op\": \"add\",\n" +
                     "            \"path\": \"/accessToken/claims/-\",\n" +
                     "            \"value\": {\n" +
-                    "                \"name\": \"custom_claim_boolean_2\",\n" +
-                    "                \"value\": false\n" +
-                    "            }\n" +
-                    "        },\n" +
-                    "        {\n" +
-                    "            \"op\": \"add\",\n" +
-                    "            \"path\": \"/accessToken/claims/-\",\n" +
-                    "            \"value\": {\n" +
-                    "                \"name\": \"custom_claim_boolean_3\",\n" +
-                    "                \"value\": true\n" +
-                    "            }\n" +
-                    "        },\n" +
-                    "        {\n" +
-                    "            \"op\": \"add\",\n" +
-                    "            \"path\": \"/accessToken/claims/-\",\n" +
-                    "            \"value\": {\n" +
                     "                \"name\": \"custom_claim_string_array_1\",\n" +
                     "                \"value\": [\n" +
                     "                    \"TestCustomClaim1\",\n" +
                     "                    \"TestCustomClaim2\",\n" +
                     "                    \"TestCustomClaim3\"\n" +
-                    "                ]\n" +
-                    "            }\n" +
-                    "        },\n" +
-                    "        {\n" +
-                    "            \"op\": \"add\",\n" +
-                    "            \"path\": \"/accessToken/claims/-\",\n" +
-                    "            \"value\": {\n" +
-                    "                \"name\": \"custom_claim_string_array_2\",\n" +
-                    "                \"value\": [\n" +
-                    "                    \"TestCustomClaim4\",\n" +
-                    "                    \"TestCustomClaim5\",\n" +
-                    "                    \"TestCustomClaim6\"\n" +
-                    "                ]\n" +
-                    "            }\n" +
-                    "        },\n" +
-                    "        {\n" +
-                    "            \"op\": \"add\",\n" +
-                    "            \"path\": \"/accessToken/claims/-\",\n" +
-                    "            \"value\": {\n" +
-                    "                \"name\": \"custom_claim_string_array_3\",\n" +
-                    "                \"value\": [\n" +
-                    "                    \"TestCustomClaim7\",\n" +
-                    "                    \"TestCustomClaim8\",\n" +
-                    "                    \"TestCustomClaim9\"\n" +
                     "                ]\n" +
                     "            }\n" +
                     "        },\n" +

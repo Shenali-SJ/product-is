@@ -94,6 +94,8 @@ public class PreIssueAccessTokenPasswordGrantTestCase extends ActionsBaseTestCas
     private static final String CUSTOM_SCOPE_2 = "test_custom_scope_2";
     private static final String CUSTOM_SCOPE_3 = "test_custom_scope_3";
     private static final String NEW_SCOPE_1 = "new_test_custom_scope_1";
+    private static final String NEW_SCOPE_2 = "new_test_custom_scope_2";
+    private static final String NEW_SCOPE_3 = "new_test_custom_scope_3";
     private static final String NEW_SCOPE_4 = "replaced_scope";
 
     private static final String SCIM2_USERS_API = "/o/scim2/Users";
@@ -146,6 +148,8 @@ public class PreIssueAccessTokenPasswordGrantTestCase extends ActionsBaseTestCas
         String[] scopes = jwtClaims.getStringClaim("scope").split("\\s+");
 
         Assert.assertTrue(ArrayUtils.contains(scopes, NEW_SCOPE_1));
+        Assert.assertTrue(ArrayUtils.contains(scopes, NEW_SCOPE_2));
+        Assert.assertTrue(ArrayUtils.contains(scopes, NEW_SCOPE_3));
         Assert.assertTrue(ArrayUtils.contains(scopes, NEW_SCOPE_4));
         Assert.assertFalse(ArrayUtils.contains(scopes, CUSTOM_SCOPE_3));
         Assert.assertFalse(ArrayUtils.contains(scopes, CUSTOM_SCOPE_2));
@@ -157,6 +161,8 @@ public class PreIssueAccessTokenPasswordGrantTestCase extends ActionsBaseTestCas
         String[] audValueArray = jwtClaims.getStringArrayClaim("aud");
 
         Assert.assertTrue(ArrayUtils.contains(audValueArray, "zzz1.com"));
+        Assert.assertTrue(ArrayUtils.contains(audValueArray, "zzz2.com"));
+        Assert.assertTrue(ArrayUtils.contains(audValueArray, "zzz3.com"));
         Assert.assertTrue(ArrayUtils.contains(audValueArray, "zzzR.com"));
         Assert.assertFalse(ArrayUtils.contains(audValueArray, clientId));
     }
